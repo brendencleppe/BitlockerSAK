@@ -426,7 +426,7 @@ The method was successful.                                         242968-693319
                     default {$Return = 'Uknown return code.';break}
                 }
             }
-            'Decrytp'{
+            'Decrypt'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $ReturnCode = $BitLocker.Decrypt()
 
