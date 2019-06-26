@@ -345,7 +345,9 @@ The method was successful.                                         242968-693319
                     '3'{$Return = 'AES_128';break}
                     '4'{$Return = 'AES_256';break}
                     '5'{$Return = 'HARDWARE_ENCRYPTION';break}
-                    default{$Return = 'UNKNOWN';break}
+                    '6'{$Return = 'XtsAes128';break}
+                    '7'{$Return = 'XtsAes256';break}
+                    default{$Return = 'UNKNOWN - Inform to add new Encryption method';break}
             }
             
         }
