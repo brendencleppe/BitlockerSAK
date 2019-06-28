@@ -273,7 +273,7 @@ The method was successful.                                         242968-693319
                                 $Return = New-Object psobject -Property $Properties
                              }
                 }
-                        }          
+            }          
             'ResumeEncryption'{
                         write-verbose 'Resuming encryption'
                         $ProtectionState = Get-WmiObject -Namespace ROOT\CIMV2\Security\Microsoftvolumeencryption -Class Win32_encryptablevolume -Filter "DriveLetter = '$DriveLetter'"
@@ -351,7 +351,7 @@ The method was successful.                                         242968-693319
                     default{$Return = 'UNKNOWN - Inform to add new Encryption method';break}
                 }#EndGetEncryptionMethod
             
-        }
+            }
             'GetKeyProtectorTypeAndID'{
             
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
@@ -383,7 +383,7 @@ The method was successful.                                         242968-693319
                     $Return += New-Object -TypeName psobject -Property $Properties
                 }#EndForeach
 
-        }#EndGetKeyProtectorType
+            }#EndGetKeyProtectorType
             'DeleteKeyProtectors'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $Return = $BitLocker.DeleteKeyProtectors()
@@ -459,20 +459,8 @@ The method was successful.                                         242968-693319
 
 
             }#EndGetKeyProtectorNumericalPassword
- 
-            'GetNumericalPasswordsForAllVolumes'{
-                        $BitlockerVolumers = Get-BitLockerVolume
-                        $BitlockerVolumers |
-                        ForEach-Object {
-                        $MountPoint = $_.MountPoint
-                        $RecoveryKey = [string]($_.KeyProtector).RecoveryPassword
-                        if ($RecoveryKey.Length -gt 5) {
-                            manage-bde -protectors $MountPoint -get
-                            }
-                        }
-                        $Return += New-Object -TypeName psobject -Property $Properties                 
-            }#EndGetNumericalPasswordsForAllVolumes
 
+            
 
         }#endSwitch
         
@@ -496,7 +484,7 @@ The method was successful.                                         242968-693319
             $CurrentEncryptionState = BitLockerSAK -GetEncryptionState
             $EncryptionMethod= BitLockerSAK -GetEncryptionMethod
             $KeyProtectorTypeAndID = BitLockerSAK -GetKeyProtectorTypeAndID
-            $Bitlockerkeys = $GetNumericalPasswordsForAllVolumes
+            
             
             $properties= @{ 'IsTPMActivated'= $TpmActivated;`
                             'IsTPMEnabled' = $TPMEnabled;`
@@ -510,7 +498,7 @@ The method was successful.                                         242968-693319
                             }
 
             $Return = New-Object psobject -Property $Properties
-            Write-output $Bitlockerkeys
+            
 
         }
 
@@ -521,4 +509,26 @@ The method was successful.                                         242968-693319
         
     }
 	
+}
+Function Bitlocker-Get {
+
+    'GetNumericalPasswordsForAllVolumes'{
+                        $BitlockerVolumers = Get-BitLockerVolume
+                        $BitlockerVolumers |
+                        ForEach-Object {
+                        $MountPoint = $_.MountPoint
+                        $RecoveryKey = [string]($_.KeyProtector).RecoveryPassword
+                        if ($RecoveryKey.Length -gt 5) {
+                            manage-bde -protectors $MountPoint -get
+                            }
+                        }
+                        $Return += New-Object -TypeName psobject -Property $Properties                 
+            }#EndGetNumericalPasswordsForAllVolumes
+            
+
+
+}
+
+Function Bitlokcer-Encrypt {
+    
 }
