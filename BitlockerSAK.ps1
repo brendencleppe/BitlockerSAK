@@ -157,7 +157,7 @@ The method was successful.                                         242968-693319
         --> DeleteKeyProtector,
         --> PauseEncryption,
         --> PauseDecryption,
-        --> Decrytp
+        --> Decrypt
     #1.4.1 --> updated help with GetKeyPRotectedID instead of KeyProtectedID parameter
     #1.5 Added GetKeyProtectorNumericalPassword and VolumeKeyProtectorID parameters.
 
@@ -183,7 +183,7 @@ The method was successful.                                         242968-693319
            if ($_ -match '^[A-Z]{1}[:]'){
             return $true
            }else{
-            Write-Warning 'The drive letter parameter has to respect the following case: DriverLetter+Colomn EG: --> C: --> D: --> E: '
+            Write-Warning 'The drive letter parameter has to respect the following case: DriverLetter+Colon EG: --> C: --> D: --> E: '
             return $false
            }
         })][string]$DriveLetter='C:',
@@ -193,12 +193,13 @@ The method was successful.                                         242968-693319
         [switch]$DeleteKeyProtector,
         [switch]$PauseEncryption,
         [switch]$PauseDecryption,
-        [switch]$Decrytp,
+        [switch]$Decrypt,
         [Parameter(ParameterSetName='NumericalPassword')]
         [Switch]$GetKeyProtectorNumericalPassword,
 
         [Parameter(ParameterSetName='NumericalPassword',Mandatory=$true)]
-        [String]$VolumeKeyProtectorID
+        [String]$VolumeKeyProtectorID,
+        [Switch]$GetNumericalPasswordsForAllVolumes
         
     )
     Begin {
@@ -330,11 +331,11 @@ The method was successful.                                         242968-693319
 
                     $Properties = @{'ReturnCode'=$ReturnCode;'ErrorMessage'=$message}
                     $Return = New-Object psobject -Property $Properties
-            }
+            }#EndEncrypt
             'GetKeyProtectorIds'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $return =$BitLocker.GetKeyProtectors('0').VolumeKeyProtectorID
-            }
+            }#EndGetKeyProtectorIds
             'GetEncryptionMethod'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $EncryptMethod=$BitLocker.GetEncryptionMethod().encryptionmethod
@@ -348,7 +349,7 @@ The method was successful.                                         242968-693319
                     '6'{$Return = 'XtsAes128';break}
                     '7'{$Return = 'XtsAes256';break}
                     default{$Return = 'UNKNOWN - Inform to add new Encryption method';break}
-            }
+                }#EndGetEncryptionMethod
             
         }
             'GetKeyProtectorTypeAndID'{
@@ -387,10 +388,10 @@ The method was successful.                                         242968-693319
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $Return = $BitLocker.DeleteKeyProtectors()
 
-            }
+            }#EndDeleteKeyProtectors
             'TakeTPMOwnerShip'{
                 $Tpm.takeOwnership()
-            }
+            }#EndTakeTPMOwnerShip
             'DeleteKeyProtector'{
 
                 if ($PSBoundParameters.ContainsKey('ProtectorIDs')){
@@ -405,7 +406,7 @@ The method was successful.                                         242968-693319
                     $Return = 'Could not delete the key protector. Missing ProtectorID parameter.'
                     
                 }
-            }
+            }#EndDeleteKeyProtector
             'PauseEncryption'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $ReturnCode = $BitLocker.PauseConversion()
@@ -415,7 +416,7 @@ The method was successful.                                         242968-693319
                     '2150694912'{$Return = 'The volume is locked.';Break}
                     default {$Return = 'Uknown return code.';break}
                 }
-            }
+            }#EndPauseEncryption
             'PauseDecryption'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $ReturnCode = $BitLocker.PauseConversion()
@@ -425,7 +426,7 @@ The method was successful.                                         242968-693319
                     '2150694912'{$Return = 'The volume is locked.';Break}
                     default {$Return = 'Uknown return code.';break}
                 }
-            }
+            }#EndPauseDecryption
             'Decrypt'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $ReturnCode = $BitLocker.Decrypt()
@@ -437,7 +438,7 @@ The method was successful.                                         242968-693319
                     default {$Return = 'Uknown return code.';break}
                 }
 
-            }
+            }#EndDecrypt
             'GetKeyProtectorNumericalPassword'{
                 $BitLocker = Get-WmiObject -Namespace 'Root\cimv2\Security\MicrosoftVolumeEncryption' -Class 'Win32_EncryptableVolume' -Filter "DriveLetter = '$DriveLetter'"
                 $Return = @()
@@ -457,7 +458,22 @@ The method was successful.                                         242968-693319
                     $Return += New-Object -TypeName psobject -Property $Properties
 
 
-            }
+            }#EndGetKeyProtectorNumericalPassword
+ 
+            'GetNumericalPasswordsForAllVolumes'{
+                        $BitlockerVolumers = Get-BitLockerVolume
+                        $BitlockerVolumers |
+                        ForEach-Object {
+                        $MountPoint = $_.MountPoint
+                        $RecoveryKey = [string]($_.KeyProtector).RecoveryPassword
+                        if ($RecoveryKey.Length -gt 5) {
+                            manage-bde -protectors $MountPoint -get
+                            }
+                        }
+                        $Return += New-Object -TypeName psobject -Property $Properties                 
+            }#EndGetNumericalPasswordsForAllVolumes
+
+
         }#endSwitch
         
 
@@ -480,7 +496,8 @@ The method was successful.                                         242968-693319
             $CurrentEncryptionState = BitLockerSAK -GetEncryptionState
             $EncryptionMethod= BitLockerSAK -GetEncryptionMethod
             $KeyProtectorTypeAndID = BitLockerSAK -GetKeyProtectorTypeAndID
-
+            $Bitlockerkeys = $GetNumericalPasswordsForAllVolumes
+            
             $properties= @{ 'IsTPMActivated'= $TpmActivated;`
                             'IsTPMEnabled' = $TPMEnabled;`
                             'IsTPMOwnerShipAllowed'=$TPMOwnerShipAllowed;`
@@ -488,15 +505,20 @@ The method was successful.                                         242968-693319
                             'CurrentEncryptionPercentage'=$CurrentEncryptionState.CurrentEncryptionProgress;`
                             'EncryptionState'=$CurrentEncryptionState.encryptionState; `
                             'EncryptionMethod'=$EncryptionMethod;`
-                            'KeyProtectorTypesAndIDs'=$KeyProtectorTypeAndID 
+                            'KeyProtectorTypesAndIDs'=$KeyProtectorTypeAndID;`
+                            
                             }
-            
+
             $Return = New-Object psobject -Property $Properties
+            Write-output $Bitlockerkeys
+
         }
 
     }
     End{
         return $return
+        
+        
     }
 	
 }
