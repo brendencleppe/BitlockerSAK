@@ -510,25 +510,3 @@ The method was successful.                                         242968-693319
     }
 	
 }
-Function Bitlocker-Get {
-
-    'GetNumericalPasswordsForAllVolumes'{
-                        $BitlockerVolumers = Get-BitLockerVolume
-                        $BitlockerVolumers |
-                        ForEach-Object {
-                        $MountPoint = $_.MountPoint
-                        $RecoveryKey = [string]($_.KeyProtector).RecoveryPassword
-                        if ($RecoveryKey.Length -gt 5) {
-                            manage-bde -protectors $MountPoint -get
-                            }
-                        }
-                        $Return += New-Object -TypeName psobject -Property $Properties                 
-            }#EndGetNumericalPasswordsForAllVolumes
-            
-
-
-}
-
-Function Bitlokcer-Encrypt {
-    
-}
